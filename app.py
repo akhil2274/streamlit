@@ -58,6 +58,31 @@ client = OpenAI(
 st.set_page_config(
     page_title="Akhil's Professional Assistant Bot 🤖", page_icon="🤖"
 )
+
+# ── Hide GitHub Icon via Custom CSS/JS ───────────────────────────────────────
+st.markdown(
+    """
+    <style>
+    /* Hide the toolbar buttons / GitHub icon container in newer Streamlit versions */
+    header [data-testid="stToolbar"] {
+        display: none !important;
+    }
+    </style>
+    <script>
+    // Fallback script to actively remove the GitHub icon if it renders dynamically
+    const observer = new MutationObserver(() => {
+        const ghIcon = document.querySelector('[data-testid="stToolbar"] a[href*="github.com"]');
+        if (ghIcon) {
+            ghIcon.closest('div').style.display = 'none';
+        }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    </script>
+    """,
+    unsafe_allow_html=True,
+)
+
+
 st.title("Akhil's Professional Assistant Bot 🤖")
 st.write("Ask me anything about Akhil's professional details.")
 
