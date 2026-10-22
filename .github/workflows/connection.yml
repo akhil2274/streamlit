@@ -2,16 +2,16 @@ name: Streamlit Keep Alive
 
 on:
   schedule:
-    # Runs every 6 hours UTC to keep the app active
-    - cron: '* */6 * * *'
-  workflow_dispatch: # Allows you to trigger it manually from GitHub
+    # Runs every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
       - name: Send HTTP request to keep app alive
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: 'https://app-12345.streamlit.app/'
-          method: 'GET'
+        run: |
+          # Sends a GET request with a 30-second timeout (-m 30) 
+          # and follows redirects (-L) in case Streamlit redirects the URL
+          curl -m 30 -L -I https://app-12345.streamlit.app/
