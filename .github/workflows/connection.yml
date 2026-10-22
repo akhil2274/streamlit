@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Send HTTP request to keep app alive
         run: |
-          # Sends a GET request with a 30-second timeout (-m 30) 
-          # and follows redirects (-L) in case Streamlit redirects the URL
-          curl -m 30 -L -I https://app-12345.streamlit.app/
+          # -m 30: 30-second timeout for waking up the app
+          # -s: Silent mode (hides progress meter)
+          # -o /dev/null: Discards response body to keep logs clean
+          # --max-redirs 3: Prevents infinite redirect loops
+          curl -m 30 -s -o /dev/null --max-redirs 3 https://app-12345.streamlit.app/
