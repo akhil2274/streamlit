@@ -1,19 +1,34 @@
-# name: Streamlit Keep Alive
+name: Streamlit Keep Alive
 
-# on:
-#   schedule:
-#     # Runs every 6 hours
-#     - cron: '0 */6 * * *'
-#   workflow_dispatch:
+on:
+  schedule:
+    # Every 4 hours; Streamlit sleeps apps after 12 hours without visits,
+    # and GitHub may delay or skip scheduled runs, so leave headroom
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
 
-# jobs:
-#   ping:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Send HTTP request to keep app alive
-#         run: |
-#           # -m 30: 30-second timeout for waking up the app
-#           # -s: Silent mode (hides progress meter)
-#           # -o /dev/null: Discards response body to keep logs clean
-#           # --max-redirs 3: Prevents infinite redirect loops
-#           curl -m 30 -s -o /dev/null --max-redirs 3 https://app-12345.streamlit.app/
+jobs:
+  visit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Visit app in a headless browser
+        run: python .github/scripts/keep_alive.py
+
+      - name: Upload screenshot on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: keep-alive-failure
+          path: keep_alive_failure.png
