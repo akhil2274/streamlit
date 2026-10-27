@@ -17,11 +17,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: .github/scripts/requirements.txt
 
+      # No "playwright install" needed: the script uses the runner's preinstalled Chrome
       - name: Install Playwright
-        run: |
-          pip install playwright
-          playwright install --with-deps chromium
+        run: pip install -r .github/scripts/requirements.txt
 
       - name: Visit app in a headless browser
         run: python .github/scripts/keep_alive.py

@@ -9,7 +9,8 @@ from playwright.sync_api import sync_playwright
 APP_URL = "https://app-12345.streamlit.app/"
 
 with sync_playwright() as p:
-  browser = p.chromium.launch()
+  # Use the Google Chrome preinstalled on GitHub runners instead of downloading one
+  browser = p.chromium.launch(channel="chrome")
   page = browser.new_page()
   page.goto(APP_URL, wait_until="domcontentloaded", timeout=60_000)
 
