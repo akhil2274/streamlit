@@ -20,6 +20,8 @@ resume = load_resume()
 # Streamlit reads secrets securely from its cloud dashboard or local .streamlit/secrets.toml
 API_KEY = st.secrets["API_KEY"]
 MODEL_NAME = "claude-haiku-5-5"
+# Caps token usage per visitor; each question resends the resume and full history
+MAX_QUESTIONS_PER_SESSION = 10
 
 SYSTEM_PROMPT = f"""
 You are a helpful and friendly customer support assistant for me(Akhileswar Reddy M)
@@ -107,8 +109,22 @@ for message in st.session_state.messages:
   with st.chat_message(message["role"]):
     st.markdown(message["content"])
 
+questions_asked = sum(
+    1 for msg in st.session_state.messages if msg["role"] == "user"
+)
+limit_reached = questions_asked >= MAX_QUESTIONS_PER_SESSION
+
+if limit_reached:
+  st.info(
+      "You've reached the question limit for this session. For more details,"
+      " please contact Akhil at m.akhileswarreddy@gmail.com."
+  )
+
 # Handle user input
-if user_message := st.chat_input("Type your question here..."):
+user_message = st.chat_input(
+    "Type your question here...", disabled=limit_reached
+)
+if user_message and not limit_reached:
   # Append user message to state and display it
   st.session_state.messages.append({"role": "user", "content": user_message})
   with st.chat_message("user"):
@@ -132,3 +148,7 @@ if user_message := st.chat_input("Type your question here..."):
   st.session_state.messages.append(
       {"role": "assistant", "content": assistant_message}
   )
+
+  # Rerun so the input is disabled right after the last allowed answer
+  if questions_asked + 1 >= MAX_QUESTIONS_PER_SESSION:
+    st.rerun()
