@@ -24,9 +24,9 @@ with sync_playwright() as p:
 
   # The app itself runs inside an iframe on *.streamlit.app; wait for it to render
   try:
-    page.frame_locator("iframe").get_by_text(
+    page.frame_locator('iframe[title="streamlitApp"]').get_by_text(
         "Akhil's Professional Assistant Bot"
-    ).wait_for(timeout=180_000)
+    ).first.wait_for(timeout=180_000)
     print("App loaded successfully.")
   except PlaywrightTimeoutError:
     page.screenshot(path="keep_alive_failure.png", full_page=True)
