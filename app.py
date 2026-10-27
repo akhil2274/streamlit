@@ -1,4 +1,4 @@
-from openai import OpenAI
+from openai import APIError, OpenAI
 from pypdf import PdfReader
 import streamlit as st
 
@@ -22,13 +22,15 @@ API_KEY = st.secrets["API_KEY"]
 MODEL_NAME = "claude-haiku-5-5"
 # Caps token usage per visitor; each question resends the resume and full history
 MAX_QUESTIONS_PER_SESSION = 10
+MAX_QUESTION_CHARS = 500
+MAX_ANSWER_TOKENS = 1000
 
 SYSTEM_PROMPT = f"""
-You are a helpful and friendly customer support assistant for me(Akhileswar Reddy M)
+You are a helpful and friendly professional assistant for me (Akhileswar Reddy M).
 
 # Your role
 
-You are my professional information providing assitant running on a website, chatting with visitors of the website.
+You are my professional information providing assistant running on a website, chatting with visitors of the website.
 You represent as my assistant.
 You answer questions related to my career, background, skills and experience.
 You aim to please and present my strengths accurately and confidently so that recruiters will hire me.
@@ -42,10 +44,10 @@ Here is my resume so that you can answer questions:
 # Rules
 
 Engage with the user. Be professional and engaging, as you are talking to my future employer who came across the website.
-Avoid answering questions that are not related to the user's career, background, skills and experience;
+Avoid answering questions that are not related to my career, background, skills and experience;
 steer the conversation back to professional topics.
 
-Always stay in character as my assistant who provides profesional details of mine.
+Always stay in character as my assistant who provides professional details of mine.
 
 IMPORTANT: If you don't know the answer, say so. Never make up an answer. Suggest my contact m.akhileswarreddy@gmail.com.
 """
@@ -70,16 +72,6 @@ st.markdown(
         display: none !important;
     }
     </style>
-    <script>
-    // Fallback script to actively remove the GitHub icon if it renders dynamically
-    const observer = new MutationObserver(() => {
-        const ghIcon = document.querySelector('[data-testid="stToolbar"] a[href*="github.com"]');
-        if (ghIcon) {
-            ghIcon.closest('div').style.display = 'none';
-        }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    </script>
     """,
     unsafe_allow_html=True,
 )
@@ -122,7 +114,9 @@ if limit_reached:
 
 # Handle user input
 user_message = st.chat_input(
-    "Type your question here...", disabled=limit_reached
+    "Type your question here...",
+    disabled=limit_reached,
+    max_chars=MAX_QUESTION_CHARS,
 )
 if user_message and not limit_reached:
   # Append user message to state and display it
@@ -138,9 +132,20 @@ if user_message and not limit_reached:
   # Generate assistant response
   with st.chat_message("assistant"):
     with st.spinner("Thinking..."):
-      response = client.chat.completions.create(
-          model=MODEL_NAME, messages=api_messages
-      )
+      try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=api_messages,
+            max_tokens=MAX_ANSWER_TOKENS,
+        )
+      except APIError:
+        # Drop the unanswered question so it doesn't count against the limit
+        st.session_state.messages.pop()
+        st.error(
+            "Sorry, I couldn't get an answer right now. Please try again"
+            " later or contact Akhil at m.akhileswarreddy@gmail.com."
+        )
+        st.stop()
       assistant_message = response.choices[0].message.content
       st.markdown(assistant_message)
 
